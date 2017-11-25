@@ -1,0 +1,37 @@
+#! /bin/bash
+
+for n in 1 2 3 4 5 6 7 8 9 0 A Ą B C Ć D E Ę F G H I J K L Ł M N Ń O Ó P Q R S Ś T U V W X Y Z Ż Ź "," "=" ":" "−" "+" "<" ">" "·" "?"
+do
+	echo "$n"
+	m="$n"
+	if [ "$n" == "Ą" ]; then m="A_"; fi
+	if [ "$n" == "Ć" ]; then m="C_"; fi
+	if [ "$n" == "Ę" ]; then m="E_"; fi
+	if [ "$n" == "Ł" ]; then m="L_"; fi
+	if [ "$n" == "Ń" ]; then m="N_"; fi
+	if [ "$n" == "Ó" ]; then m="O_"; fi
+	if [ "$n" == "Ś" ]; then m="S_"; fi
+	if [ "$n" == "Ż" ]; then m="Z_"; fi
+	if [ "$n" == "Ź" ]; then m="Y_"; fi
+	if [ "$n" == "," ]; then m="decimalpoint"; fi
+	if [ "$n" == ":" ]; then m="divide"; fi
+	if [ "$n" == "=" ]; then m="equals"; fi
+	if [ "$n" == "<" ]; then m="less"; fi
+	if [ "$n" == "−" ]; then m="minus"; fi
+	if [ "$n" == ">" ]; then m="more"; fi
+	if [ "$n" == "·" ]; then m="multiplicate"; fi
+	if [ "$n" == "+" ]; then m="plus"; fi
+	if [ "$n" == "?" ]; then m="question"; fi
+	convert -size 64x64 -gravity center -font ~/.fonts/texgyreschola-regular.otf label:"$n" teaching_lab_util_"$m".bmp
+	mogrify -trim *.bmp
+	convert -size 52x52 xc:white -mattecolor SkyBlue -frame 6x6 template.png
+	if [ "$n" == "," ]; then
+		composite -gravity center -geometry +0+10 teaching_lab_util_"$m".bmp template.png teaching_lab_util_"$m".png
+	else
+		composite -gravity center teaching_lab_util_"$m".bmp template.png teaching_lab_util_"$m".png
+	fi
+	convert -size 52x52 xc:white -mattecolor Pink -frame 6x6 teaching_lab_allowdig.png
+	cp template.png teaching_lab.png
+	mv template.png teaching_lab_checker.png
+done
+	rm *.bmp
