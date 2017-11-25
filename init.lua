@@ -76,6 +76,9 @@ local function register_util_node(name, digit, humanname)
 		can_dig = function(pos, player)
 			if minetest.check_player_privs(player:get_player_name(), {teacher=true}) then
 				return true
+			--Enable students with freebuild to dig util nodes they (and you) placed
+			elseif minetest.check_player_privs(player:get_player_name(), {freebuild=true}) then
+				return true
 			else
 				local node = minetest.get_node({x=pos.x, y=pos.y-1, z=pos.z})
 				if node.name == 'teaching:lab_checker' or node.name == 'teaching:lab_allowdig' then
@@ -83,6 +86,48 @@ local function register_util_node(name, digit, humanname)
 				else
 					return false
 				end
+			end
+		end,
+		on_punch = function(pos, node, puncher)
+			if minetest.check_player_privs(puncher:get_player_name(), {teacher=true}) then
+				--set to respective glow node
+				minetest.set_node(pos, {name=node.name .. "_glow", param2=minetest.dir_to_facedir(puncher:get_look_dir())})
+			end
+		end,
+	})
+end
+
+local function register_util_glow_node(name, digit, humanname)
+	minetest.register_node('teaching:util_' .. name .. "_glow", {
+		drawtype = 'normal',
+		tiles = {'teaching_lab.png', 'teaching_lab.png', 'teaching_lab.png', 
+			'teaching_lab.png', 'teaching_lab.png', 'teaching_lab_util_' .. name .. '.png'},
+		paramtype2 = 'facedir',
+		paramtype = "light",
+		light_source = 10,
+		post_effect_color = {a=255, r=128, g=128, b=128},
+		description = humanname,
+		groups = {teaching_util=1, snappy=3},
+		drop = 'teaching:util_' .. name,
+		teaching_digit = digit,
+		can_dig = function(pos, player)
+			if minetest.check_player_privs(player:get_player_name(), {teacher=true}) then
+				return true
+			elseif minetest.check_player_privs(player:get_player_name(), {freebuild=true}) then
+				return true
+			else
+				local node = minetest.get_node({x=pos.x, y=pos.y-1, z=pos.z})
+				if node.name == 'teaching:lab_checker' then
+					return true
+				else
+					return false
+				end
+			end
+		end,
+		on_punch = function(pos, node, puncher)
+			if minetest.check_player_privs(puncher:get_player_name(), {teacher=true}) then
+				--set to respective dark node
+				minetest.set_node(pos, {name=string.gsub(node.name, "_glow", ""), param2=minetest.dir_to_facedir(puncher:get_look_dir())})
 			end
 		end,
 	})
@@ -210,11 +255,101 @@ minetest.register_on_placenode(function(pos, newnode, placer, oldnode, itemstack
 	end
 end)
 
+minetest.register_chatcommand("alphabetize", {
+	params = "<text string in caps>",
+	description = "Give all letters blocks in a phrase",
+	privs = {teacher = true},
+	func = function(name, param)
+		local player = minetest.get_player_by_name(name)
+		if not player then
+			return false, "Player not found"
+		end
+		if param == nil then
+			return true, "Alphabetize invoked without parameter"
+		end
+		local letternodes = {}
+		local uni
+		for c in param:gmatch(".") do
+			local h = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+			for i in h:gmatch(".") do
+				if i == c then
+					table.insert(letternodes, "teaching:util_" .. string.upper(i))
+				end
+			end
+			if c == "=" then table.insert(letternodes, "teaching:util_equals") end
+			if c == "<" then table.insert(letternodes, "teaching:util_less") end
+			if c == ">" then table.insert(letternodes, "teaching:util_more") end
+			if c == "/" or c == ":" then table.insert(letternodes, "teaching:util_divide") end
+			if c == "*" then table.insert(letternodes, "teaching:util_multiplicate") end
+			if c == "+" then table.insert(letternodes, "teaching:util_plus") end
+			if c == "-" then table.insert(letternodes, "teaching:util_minus") end
+			if c == "." or c == "," then table.insert(letternodes, "teaching:util_decimalpoint") end
+			-- detect Polish characters
+			if uni then
+				if uni == 0xc4 and (c:byte() == 0x84 or c:byte() == 0x85) then table.insert(letternodes, "teaching:util_A_") end
+				if uni == 0xc4 and (c:byte() == 0x86 or c:byte() == 0x87) then table.insert(letternodes, "teaching:util_C_") end
+				if uni == 0xc4 and (c:byte() == 0x98 or c:byte() == 0x99) then table.insert(letternodes, "teaching:util_E_") end
+				if uni == 0xc5 and (c:byte() == 0x81 or c:byte() == 0x82) then table.insert(letternodes, "teaching:util_L_") end
+				if uni == 0xc5 and (c:byte() == 0x83 or c:byte() == 0x84) then table.insert(letternodes, "teaching:util_N_") end
+				if uni == 0xc3 and (c:byte() == 0x93 or c:byte() == 0xb3) then table.insert(letternodes, "teaching:util_O_") end
+				if uni == 0xc5 and (c:byte() == 0x9a or c:byte() == 0x9b) then table.insert(letternodes, "teaching:util_S_") end
+				if uni == 0xc5 and (c:byte() == 0xbb or c:byte() == 0xbc) then table.insert(letternodes, "teaching:util_Z_") end
+				if uni == 0xc5 and (c:byte() == 0xb9 or c:byte() == 0xba) then table.insert(letternodes, "teaching:util_Y_") end
+			end
+			-- detect unicode
+			uni = nil
+			if c:byte() == 0xc3 then
+				uni = c:byte()
+			end
+			if c:byte() == 0xc4 then
+				uni = c:byte()
+			end
+			if c:byte() == 0xc5 then
+				uni = c:byte()
+			end
+		end
+		local inv = player:get_inventory()
+		local full = false
+		for _, l in ipairs(letternodes) do
+			if inv:room_for_item("main", l) then
+				inv:add_item("main", l)
+			else
+				full = true
+			end
+		end
+		if full then minetest.chat_send_player(player:get_player_name(), "Your inventory is full. Some letters were not added.") end
+		return true
+	end,
+})
+
 local s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 for i in s:gmatch('.') do
 	register_util_node(i, i, i)
+	register_util_glow_node(i, i, i)
 end
 
+--Polish
+register_util_node('A_', 'Ą', 'Ą')
+register_util_node('C_', 'Ć', 'Ć')
+register_util_node('E_', 'Ę', 'Ę')
+register_util_node('L_', 'Ł', 'Ł')
+register_util_node('N_', 'Ń', 'Ń')
+register_util_node('O_', 'Ó', 'Ó')
+register_util_node('S_', 'Ś', 'Ś')
+register_util_node('Z_', 'Ż', 'Ż')
+register_util_node('Y_', 'Ź', 'Ź')
+
+register_util_glow_node('A_', 'Ą', 'Ą')
+register_util_glow_node('C_', 'Ć', 'Ć')
+register_util_glow_node('E_', 'Ę', 'Ę')
+register_util_glow_node('L_', 'Ł', 'Ł')
+register_util_glow_node('N_', 'Ń', 'Ń')
+register_util_glow_node('O_', 'Ó', 'Ó')
+register_util_glow_node('S_', 'Ś', 'Ś')
+register_util_glow_node('Z_', 'Ż', 'Ż')
+register_util_glow_node('Y_', 'Ź', 'Ź')
+
+--Operators
 register_util_node('decimalpoint', '.', '. (Decimal point)')
 register_util_node('divide', {':', '/'}, ': (Divide)')
 register_util_node('equals', '=', '= (Equals)')
@@ -223,4 +358,17 @@ register_util_node('minus', '-', '- (Minus)')
 register_util_node('more', '>', '> (More than)')
 register_util_node('multiply', {'*', 'x'}, '* (Multiply)')
 register_util_node('plus', '+', '+ (Plus)')
+register_util_node('question', '?', '? (Question mark)')
 
+--Infobox
+minetest.register_node("teaching:infobox", {
+	description = "Infobox",
+	range = 12,
+	stack_max = 99,
+	tiles = {"infobox_cap.png", "infobox_cap.png", "infobox_side.png", "infobox_side.png", "infobox_side.png", "infobox_side.png"},
+	drop = "",
+	paramtype = "light",
+	light_source = 8,
+	post_effect_color = {a=255, r=64, g=64, b=192},
+	groups = {unbreakable = 1, not_in_creative_inventory = 1},
+})
