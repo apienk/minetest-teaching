@@ -1,7 +1,7 @@
 minetest-teaching
 =================
 
-Teaching mod for Minetest
+Teaching mod for Minetest. This fork is part of MinetestEDU modpack.
 
 Nodes
 -----
@@ -27,3 +27,7 @@ Supporting resources
 --------------------
 
 * `generate`: a Bash script to generate hires textures for all the nodes using a chosen font (requires imagemagick)
+
+Screenshot
+----------
+![Screenshot](screenshot.png)
