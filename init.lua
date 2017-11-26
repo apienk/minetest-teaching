@@ -356,7 +356,7 @@ register_util_node('equals', '=', '= (Equals)')
 register_util_node('less', '<', '< (Less than)')
 register_util_node('minus', '-', '- (Minus)')
 register_util_node('more', '>', '> (More than)')
-register_util_node('multiply', {'*', 'x'}, '* (Multiply)')
+register_util_node('multiplicate', {'*', 'x'}, '* (Multiply)')
 register_util_node('plus', '+', '+ (Plus)')
 register_util_node('question', '?', '? (Question mark)')
 
