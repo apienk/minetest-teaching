@@ -360,6 +360,16 @@ register_util_node('multiplicate', {'*', 'x'}, '* (Multiply)')
 register_util_node('plus', '+', '+ (Plus)')
 register_util_node('question', '?', '? (Question mark)')
 
+register_util_glow_node('decimalpoint', '.', '. (Decimal point)')
+register_util_glow_node('divide', {':', '/'}, ': (Divide)')
+register_util_glow_node('equals', '=', '= (Equals)')
+register_util_glow_node('less', '<', '< (Less than)')
+register_util_glow_node('minus', '-', '- (Minus)')
+register_util_glow_node('more', '>', '> (More than)')
+register_util_glow_node('multiplicate', {'*', 'x'}, '* (Multiplicate)')
+register_util_glow_node('plus', '+', '+ (Plus)')
+register_util_glow_node('question', '?', '? (Question mark)')
+
 --Infobox
 minetest.register_node("teaching:infobox", {
 	description = "Infobox",
